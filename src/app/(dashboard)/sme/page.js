@@ -221,13 +221,7 @@ export default function SMEPage() {
 
       {/* ── Header ── */}
       <div className="rounded-xl border border-border bg-card p-5 mb-5">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-2xl">📊</span>
-          <h1 className="text-xl font-semibold tracking-tight">Tamil Nadu SME Explorer</h1>
-        </div>
-        <p className="text-sm text-muted-foreground ml-9">
-          District-wise data with SEO/SMO/GEO service mapping — 8,78,713 registered SMEs across 38 districts
-        </p>
+        <h1 className="text-xl font-semibold tracking-tight">SME Explorer</h1>
       </div>
 
       {/* ── Summary Cards ── */}
