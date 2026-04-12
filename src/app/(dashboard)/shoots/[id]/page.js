@@ -59,6 +59,9 @@ function ShootDetail({ params }) {
   const [signedUrls, setSignedUrls] = useState({});
   const [categories, setCategories] = useState([]);
   const [vendors, setVendors] = useState([]);
+  const [addingVendor, setAddingVendor] = useState(false);
+  const [newVendor, setNewVendor] = useState({ name: "", email: "", contact_number: "", address: "", gst_number: "" });
+  const [savingVendor, setSavingVendor] = useState(false);
   const [form, setForm] = useState({
     title: "", category: "misc", amount: "", currency: "INR", expense_date: "",
     vendor_name: "", vendor_gst: "", invoice_number: "", invoice_date: "",
@@ -113,6 +116,27 @@ function ShootDetail({ params }) {
   }, [id]);
 
   function set(key, val) { setForm((p) => ({ ...p, [key]: val })); }
+
+  async function handleSaveVendor() {
+    if (!newVendor.name.trim()) return;
+    setSavingVendor(true);
+    const row = {
+      name: newVendor.name.trim(),
+      email: newVendor.email.trim() || null,
+      contact_number: newVendor.contact_number.trim() || null,
+      address: newVendor.address.trim() || null,
+      gst_number: newVendor.gst_number.trim() || null,
+    };
+    const { data, error: err } = await supabase.from("shoot_vendors").insert(row).select().single();
+    if (!err && data) {
+      setVendors((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)));
+      set("vendor_name", data.name);
+      set("vendor_gst", data.gst_number || "");
+      setAddingVendor(false);
+      setNewVendor({ name: "", email: "", contact_number: "", address: "", gst_number: "" });
+    }
+    setSavingVendor(false);
+  }
 
   async function handleAddExpense(e) {
     e.preventDefault();
@@ -317,24 +341,62 @@ function ShootDetail({ params }) {
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">Vendor</label>
-              <select
-                value={form.vendor_name}
-                onChange={(e) => {
-                  const name = e.target.value;
-                  set("vendor_name", name);
-                  const v = vendors.find((x) => x.name === name);
-                  if (v) set("vendor_gst", v.gst_number || "");
-                }}
-                className={inputCls}
-              >
-                <option value="">Select vendor...</option>
-                {vendors.map((v) => <option key={v.id} value={v.name}>{v.name}</option>)}
-              </select>
+              <div className="flex items-center gap-2">
+                <select
+                  value={form.vendor_name}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    if (name === "__add_new__") { setAddingVendor(true); return; }
+                    set("vendor_name", name);
+                    const v = vendors.find((x) => x.name === name);
+                    if (v) set("vendor_gst", v.gst_number || "");
+                  }}
+                  className={inputCls}
+                >
+                  <option value="">Select vendor...</option>
+                  {vendors.map((v) => <option key={v.id} value={v.name}>{v.name}</option>)}
+                  <option value="__add_new__">+ Add New Vendor</option>
+                </select>
+              </div>
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">Vendor GST</label>
               <input value={form.vendor_gst} onChange={(e) => set("vendor_gst", e.target.value)} placeholder="Auto-filled from vendor" className={inputCls} />
             </div>
+            {addingVendor && (
+              <div className="sm:col-span-2 lg:col-span-3 rounded-lg border border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
+                <p className="text-xs font-semibold text-primary">New Vendor</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-0.5 block">Name *</label>
+                    <input value={newVendor.name} onChange={(e) => setNewVendor((p) => ({ ...p, name: e.target.value }))} placeholder="Vendor name" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-0.5 block">Email</label>
+                    <input type="email" value={newVendor.email} onChange={(e) => setNewVendor((p) => ({ ...p, email: e.target.value }))} placeholder="vendor@example.com" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-0.5 block">Contact Number</label>
+                    <input value={newVendor.contact_number} onChange={(e) => setNewVendor((p) => ({ ...p, contact_number: e.target.value }))} placeholder="Phone" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-0.5 block">GST Number</label>
+                    <input value={newVendor.gst_number} onChange={(e) => setNewVendor((p) => ({ ...p, gst_number: e.target.value }))} placeholder="GST" className={inputCls} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="text-[10px] text-muted-foreground mb-0.5 block">Address</label>
+                    <input value={newVendor.address} onChange={(e) => setNewVendor((p) => ({ ...p, address: e.target.value }))} placeholder="Address" className={inputCls} />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={handleSaveVendor} disabled={savingVendor || !newVendor.name.trim()} className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                    {savingVendor ? <LoaderIcon size={12} className="animate-spin" /> : <SaveIcon size={12} />}
+                    {savingVendor ? "Saving..." : "Save Vendor"}
+                  </button>
+                  <button type="button" onClick={() => setAddingVendor(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancel</button>
+                </div>
+              </div>
+            )}
             <div>
               <label className="text-xs font-medium mb-1 block">Invoice Number</label>
               <input value={form.invoice_number} onChange={(e) => set("invoice_number", e.target.value)} placeholder="INV-001" className={inputCls} />
