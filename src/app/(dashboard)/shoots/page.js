@@ -91,9 +91,8 @@ export default function Shoots() {
     return "bg-emerald-500";
   }
 
-  function formatCurrency(amount, currency) {
-    const sym = currency === "USD" ? "$" : currency === "EUR" ? "\u20ac" : currency === "GBP" ? "\u00a3" : "\u20b9";
-    return `${sym}${Number(amount || 0).toLocaleString("en-IN")}`;
+  function formatCurrency(amount) {
+    return `\u20b9${Number(amount || 0).toLocaleString("en-IN")}`;
   }
 
   if (loading) {
@@ -196,7 +195,7 @@ export default function Shoots() {
                   <div>
                     <div className="flex items-center justify-between text-[11px] mb-1.5">
                       <span className={`font-medium ${overBudget ? "text-red-400" : "text-muted-foreground"}`}>
-                        {formatCurrency(exp.total, shoot.currency)} / {formatCurrency(budget, shoot.currency)}
+                        {formatCurrency(exp.total)} / {formatCurrency(budget)}
                       </span>
                       <span className="text-muted-foreground">{exp.count} expense{exp.count !== 1 ? "s" : ""}</span>
                     </div>
@@ -207,12 +206,12 @@ export default function Shoots() {
                       />
                     </div>
                     {overBudget && (
-                      <p className="text-[10px] text-red-400 mt-1">Over budget by {formatCurrency(exp.total - budget, shoot.currency)}</p>
+                      <p className="text-[10px] text-red-400 mt-1">Over budget by {formatCurrency(exp.total - budget)}</p>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>{formatCurrency(exp.total, shoot.currency)} spent</span>
+                    <span>{formatCurrency(exp.total)} spent</span>
                     <span>{exp.count} expense{exp.count !== 1 ? "s" : ""}</span>
                   </div>
                 )}

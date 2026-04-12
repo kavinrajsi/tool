@@ -56,7 +56,7 @@ export default function AddShoot() {
   const inputCls = "w-full rounded-md border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/60";
 
   return (
-    <div className="flex flex-1 flex-col gap-6 py-4 max-w-2xl">
+    <div className="flex flex-1 flex-col gap-6 py-4">
       <div className="flex items-center gap-4">
         <button onClick={() => router.push("/shoots")} className="p-2 rounded-md border border-border hover:bg-muted transition-colors">
           <ArrowLeftIcon size={16} />
@@ -104,15 +104,6 @@ export default function AddShoot() {
           <div>
             <label className="text-xs font-medium mb-1 block">Budget</label>
             <input type="number" min="0" step="0.01" value={form.budget} onChange={(e) => set("budget", e.target.value)} placeholder="0" className={inputCls} />
-          </div>
-          <div>
-            <label className="text-xs font-medium mb-1 block">Currency</label>
-            <select value={form.currency} onChange={(e) => set("currency", e.target.value)} className={inputCls}>
-              <option value="INR">INR</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-              <option value="GBP">GBP</option>
-            </select>
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-medium mb-1 block">Description</label>

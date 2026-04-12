@@ -201,7 +201,7 @@ function ShootDetail({ params }) {
   const pendingCount = expenses.filter((e) => e.approval_status === "pending").length;
 
   function fmt(amount) {
-    const sym = shoot.currency === "USD" ? "$" : shoot.currency === "EUR" ? "\u20ac" : shoot.currency === "GBP" ? "\u00a3" : "\u20b9";
+    const sym = "\u20b9";
     return `${sym}${Number(amount || 0).toLocaleString("en-IN")}`;
   }
 
