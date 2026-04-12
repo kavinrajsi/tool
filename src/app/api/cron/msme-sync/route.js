@@ -5,8 +5,9 @@ const API_KEY = process.env.UDYAM_API_KEY;
 const RESOURCE_ID = "8b68ae56-84cf-4728-a0a6-1be11028dea7";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 const STATE = "TAMIL NADU";
+const BATCH_SIZE = 500; // records per API call
+const MAX_PER_RUN = 5000; // max records per sync request (fits in 60s)
 
-// Fetch one page of records for a specific district
 async function fetchPage(district, offset, limit) {
   const params = new URLSearchParams({
     "api-key": API_KEY,
@@ -22,25 +23,15 @@ async function fetchPage(district, offset, limit) {
   return { records: data.records || [], total: data.total || 0 };
 }
 
-// Fetch all records for a district
-async function fetchDistrict(district) {
-  const all = [];
-  let offset = 0;
-  const limit = 500;
-
-  // First call to get total
-  const first = await fetchPage(district, 0, limit);
-  all.push(...first.records);
-  const total = first.total;
-
-  while (all.length < total) {
-    offset += limit;
-    const page = await fetchPage(district, offset, limit);
-    if (page.records.length === 0) break;
-    all.push(...page.records);
+async function insertRecords(sql, records) {
+  for (const r of records) {
+    let activities = null;
+    try { activities = JSON.parse(r.Activities || "[]"); } catch { activities = []; }
+    await sql`
+      INSERT INTO msme_units (state, district, pincode, registration_date, enterprise_name, address, activities, lg_st_code, lg_dt_code)
+      VALUES (${r.State}, ${r.District}, ${r.Pincode?.replace(".0", "") || null}, ${r.RegistrationDate}, ${r.EnterpriseName}, ${r.CommunicationAddress || null}, ${JSON.stringify(activities)}, ${r.LG_ST_Code}, ${r.LG_DT_Code})
+    `;
   }
-
-  return all;
 }
 
 export async function GET(req) {
@@ -50,7 +41,17 @@ export async function GET(req) {
   }
 
   const { searchParams } = new URL(req.url);
-  const districtParam = searchParams.get("district");
+  const district = searchParams.get("district");
+  const startOffset = parseInt(searchParams.get("offset") ?? "0");
+  const fresh = searchParams.get("fresh") === "true";
+
+  if (!district) {
+    return NextResponse.json({
+      message: "Use ?district=DISTRICT_NAME&offset=0 to sync. Add &fresh=true on first call to clear old data.",
+      example: "/api/cron/msme-sync?district=CHENNAI&offset=0&fresh=true",
+      state: STATE,
+    });
+  }
 
   try {
     const sql = getDb();
@@ -72,36 +73,38 @@ export async function GET(req) {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_msme_district ON msme_units (district)`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_msme_name ON msme_units USING gin (enterprise_name gin_trgm_ops)`;
     await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`;
-    await sql`CREATE INDEX IF NOT EXISTS idx_msme_name ON msme_units USING gin (enterprise_name gin_trgm_ops)`;
 
-    // If specific district requested, sync only that one
-    if (districtParam) {
-      const records = await fetchDistrict(districtParam);
-      await sql`DELETE FROM msme_units WHERE district = ${districtParam}`;
-
-      for (let i = 0; i < records.length; i += 100) {
-        const batch = records.slice(i, i + 100);
-        for (const r of batch) {
-          let activities = null;
-          try { activities = JSON.parse(r.Activities || "[]"); } catch { activities = []; }
-          await sql`
-            INSERT INTO msme_units (state, district, pincode, registration_date, enterprise_name, address, activities, lg_st_code, lg_dt_code)
-            VALUES (${r.State}, ${r.District}, ${r.Pincode?.replace(".0", "") || null}, ${r.RegistrationDate}, ${r.EnterpriseName}, ${r.CommunicationAddress || null}, ${JSON.stringify(activities)}, ${r.LG_ST_Code}, ${r.LG_DT_Code})
-          `;
-        }
-      }
-
-      return NextResponse.json({ ok: true, district: districtParam, records: records.length });
+    // Clear old data on fresh sync
+    if (fresh && startOffset === 0) {
+      await sql`DELETE FROM msme_units WHERE district = ${district}`;
     }
 
-    // Full sync: get districts list from udyam_districts in Supabase is complex,
-    // so fetch distinct districts from the API itself
-    // For now, return instructions to sync one district at a time
+    // Fetch records in batches up to MAX_PER_RUN
+    let offset = startOffset;
+    let inserted = 0;
+    let apiTotal = 0;
+
+    while (inserted < MAX_PER_RUN) {
+      const page = await fetchPage(district, offset, BATCH_SIZE);
+      apiTotal = page.total;
+      if (page.records.length === 0) break;
+
+      await insertRecords(sql, page.records);
+      inserted += page.records.length;
+      offset += page.records.length;
+    }
+
+    const done = offset >= apiTotal;
+
     return NextResponse.json({
-      message: "Use ?district=DISTRICT_NAME to sync a specific district. Example: ?district=CHENNAI",
-      state: STATE,
+      ok: true,
+      district,
+      inserted,
+      offset,
+      apiTotal,
+      done,
+      next: done ? null : `/api/cron/msme-sync?district=${district}&offset=${offset}`,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
