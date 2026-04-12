@@ -66,6 +66,7 @@ const titles = {
   "/sme": "SME Explorer",
   "/leads": "Contact Form Submissions",
   "/sme/directory": "MSME Directory",
+  "/sme/sync": "MSME Data Sync",
   "/sme/contacts": "SME Contacts",
 }
 

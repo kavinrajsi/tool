@@ -35,6 +35,7 @@ const ALL_PAGES = [
   // SME
   { path: "/sme",                  label: "SME Explorer",         group: "SME" },
   { path: "/sme/directory",        label: "MSME Directory",       group: "SME" },
+  { path: "/sme/sync",             label: "MSME Data Sync",       group: "SME" },
   { path: "/sme/contacts",         label: "SME Contacts",         group: "SME" },
   // Analytics
   { path: "/ga",                   label: "Google Analytics",     group: "Analytics" },

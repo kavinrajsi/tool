@@ -90,6 +90,7 @@ const navMain = [
     subItems: [
       { title: "SME Explorer",    url: "/sme" },
       { title: "MSME Directory", url: "/sme/directory" },
+      { title: "MSME Data Sync", url: "/sme/sync" },
       { title: "SME Contacts",   url: "/sme/contacts" },
     ],
   },
