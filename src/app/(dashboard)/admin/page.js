@@ -32,9 +32,6 @@ const ALL_PAGES = [
   { path: "/indexnow",             label: "IndexNow",             group: "SEO" },
   { path: "/speed-monitor",        label: "Site Speed",           group: "SEO" },
   { path: "/monitoring",           label: "Monitoring",           group: "SEO" },
-  // SME
-  { path: "/sme",                  label: "SME Explorer",         group: "SME" },
-  { path: "/sme/contacts",         label: "SME Contacts",         group: "SME" },
   // Analytics
   { path: "/ga",                   label: "Google Analytics",     group: "Analytics" },
   { path: "/search-console",       label: "Search Console",       group: "Analytics" },

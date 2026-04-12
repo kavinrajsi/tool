@@ -84,15 +84,6 @@ const navMain = [
     ],
   },
   {
-    title: "SME",
-    url: "/sme",
-    icon: <MapPinIcon />,
-    subItems: [
-      { title: "SME Explorer", url: "/sme",          badge: "dev" },
-      { title: "SME Contacts", url: "/sme/contacts", badge: "dev" },
-    ],
-  },
-  {
     title: "Content & Social",
     url: "/instagram",
     icon: <NewspaperIcon />,
