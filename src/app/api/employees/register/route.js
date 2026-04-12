@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { logError } from "@/lib/logger";
+import { sendAlertEmail } from "@/lib/email";
 
 export async function POST(req) {
   const supabase = createClient(
@@ -62,6 +63,27 @@ export async function POST(req) {
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Notify HR about new employee
+    sendAlertEmail({
+      to: "hr@madarth.com",
+      subject: `New Employee Registered: ${row.first_name} ${row.last_name}`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 16px;">
+          <h2 style="font-size: 20px; font-weight: 600; margin-bottom: 16px;">New Employee Registered</h2>
+          <p style="color: #555; line-height: 1.6;">
+            A new employee has been added to the system.
+          </p>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
+            <tr><td style="padding: 8px 0; color: #888; width: 120px;">Name</td><td style="padding: 8px 0; font-weight: 500;">${row.first_name} ${row.last_name}</td></tr>
+            <tr><td style="padding: 8px 0; color: #888;">Work Email</td><td style="padding: 8px 0;">${row.work_email}</td></tr>
+            <tr><td style="padding: 8px 0; color: #888;">Department</td><td style="padding: 8px 0;">${row.department || "Not assigned"}</td></tr>
+            <tr><td style="padding: 8px 0; color: #888;">Employee Type</td><td style="padding: 8px 0; text-transform: capitalize;">${row.employee_type}</td></tr>
+            <tr><td style="padding: 8px 0; color: #888;">Joining Date</td><td style="padding: 8px 0;">${row.date_of_joining}</td></tr>
+          </table>
+        </div>
+      `,
+    }).catch(() => {});
 
     return NextResponse.json({ ok: true, name: `${row.first_name} ${row.last_name}` });
   } catch (err) {
