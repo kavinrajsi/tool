@@ -23,6 +23,9 @@
     },
     "src/app/api/cron/udyam-sync/route.js": {
       "maxDuration": 60
+    },
+    "src/app/api/cron/msme-sync/route.js": {
+      "maxDuration": 60
     }
   },
   "crons": [

@@ -65,6 +65,7 @@ const titles = {
   "/shoots/vendors": "Vendors",
   "/sme": "SME Explorer",
   "/leads": "Contact Form Submissions",
+  "/sme/directory": "MSME Directory",
   "/sme/contacts": "SME Contacts",
 }
 
