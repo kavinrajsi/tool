@@ -48,47 +48,8 @@ const DISTRICT_INDUSTRIES = {
   "PERAMBALUR":      ["Agro Processing","Rice Mills","Dairy"],
 };
 
-// Fallback hardcoded data (used if DB is empty)
-const FALLBACK_DISTRICTS = [
-  { name: "Chennai",         micro: 362363, small: 6405, medium: 521, tier: 1, region: "North",   industries: ["IT/ITES","Auto Components","Engineering","Electronics","Leather","Pharma","Logistics"] },
-  { name: "Coimbatore",      micro: 210002, small: 2076, medium: 144, tier: 1, region: "West",    industries: ["Textiles","Pumps & Motors","Foundry","Engineering","IT/ITES","Food Processing"] },
-  { name: "Madurai",         micro: 132880, small: 1003, medium: 50,  tier: 1, region: "South",   industries: ["Textiles","Food Processing","Rubber","Granite","Tourism","Healthcare"] },
-  { name: "Thiruvallur",     micro: 131682, small: 904,  medium: 43,  tier: 1, region: "North",   industries: ["Auto Components","Engineering","Leather","Electronics","Logistics"] },
-  { name: "Salem",           micro: 129963, small: 1050, medium: 52,  tier: 1, region: "West",    industries: ["Steel","Textiles","Sago & Tapioca","Sericulture","Agro Processing"] },
-  { name: "Tiruchirappalli", micro: 107583, small: 679,  medium: 27,  tier: 1, region: "Central", industries: ["Heavy Engineering","Leather","Food Processing","Agro Processing"] },
-  { name: "Tiruppur",        micro: 100920, small: 938,  medium: 27,  tier: 1, region: "West",    industries: ["Knitwear & Hosiery","Garment Export","Textiles","Dyeing & Bleaching"] },
-  { name: "Kanchipuram",     micro: 100960, small: 840,  medium: 64,  tier: 1, region: "North",   industries: ["Silk Sarees","Handlooms","Auto Components","Electronics","Engineering"] },
-  { name: "Cuddalore",       micro: 91415,  small: 358,  medium: 18,  tier: 2, region: "North",   industries: ["Chemicals","Sugar","Salt","Marine Products","Leather"] },
-  { name: "Thanjavur",       micro: 89910,  small: 477,  medium: 17,  tier: 2, region: "Central", industries: ["Rice Mills","Tanjore Art","Musical Instruments","Sugar","Tourism"] },
-  { name: "Chengalpattu",    micro: 88645,  small: 315,  medium: 6,   tier: 2, region: "North",   industries: ["Auto Components","IT/ITES","Electronics","Logistics"] },
-  { name: "Erode",           micro: 86819,  small: 787,  medium: 31,  tier: 2, region: "West",    industries: ["Textiles","Turmeric & Spices","Handlooms","Sugar","Agro Processing"] },
-  { name: "Dindigul",        micro: 83813,  small: 476,  medium: 11,  tier: 2, region: "South",   industries: ["Locks","Leather","Textiles","Agro Processing","Spices"] },
-  { name: "Krishnagiri",     micro: 82506,  small: 525,  medium: 15,  tier: 2, region: "North",   industries: ["Fruit Processing","Silk","Granite","Poultry","Agro Processing"] },
-  { name: "Vellore",         micro: 76920,  small: 444,  medium: 21,  tier: 2, region: "North",   industries: ["Leather","Footwear","Auto Components","Agro Processing"] },
-  { name: "Villupuram",      micro: 75109,  small: 326,  medium: 12,  tier: 2, region: "North",   industries: ["Sugar","Rice Mills","Leather","Agro Processing"] },
-  { name: "Kanniyakumari",   micro: 74387,  small: 432,  medium: 12,  tier: 2, region: "South",   industries: ["Marine Products","Rubber","Coir","Cashew","Tourism"] },
-  { name: "Tirunelveli",     micro: 71603,  small: 399,  medium: 10,  tier: 2, region: "South",   industries: ["Renewable Energy","Rice Mills","Agro Processing"] },
-  { name: "Tiruvannamalai",  micro: 69416,  small: 247,  medium: 16,  tier: 2, region: "North",   industries: ["Agro Processing","Rice Mills","Handlooms","Sugar","Tourism"] },
-  { name: "Namakkal",        micro: 68009,  small: 674,  medium: 37,  tier: 2, region: "West",    industries: ["Poultry & Eggs","Transport","Textiles","Agro Processing"] },
-  { name: "Tuticorin",       micro: 67770,  small: 441,  medium: 20,  tier: 2, region: "South",   industries: ["Salt","Marine Products","Chemicals","Port/Logistics"] },
-  { name: "Dharmapuri",      micro: 65420,  small: 231,  medium: 6,   tier: 2, region: "North",   industries: ["Sericulture","Sago","Poultry","Agro Processing"] },
-  { name: "Virudhunagar",    micro: 62926,  small: 361,  medium: 15,  tier: 2, region: "South",   industries: ["Fireworks & Crackers","Printing & Packaging","Safety Matches","Textiles"] },
-  { name: "Pudukkottai",     micro: 56048,  small: 222,  medium: 5,   tier: 3, region: "Central", industries: ["Cement","Granite","Agro Processing","Marine Products"] },
-  { name: "Theni",           micro: 50235,  small: 272,  medium: 7,   tier: 3, region: "South",   industries: ["Spices","Cotton Mills","Agro Processing","Tourism"] },
-  { name: "Sivaganga",       micro: 45018,  small: 180,  medium: 7,   tier: 3, region: "South",   industries: ["Cement","Agro Processing","Handlooms","Tourism"] },
-  { name: "Thiruvarur",      micro: 43456,  small: 154,  medium: 1,   tier: 3, region: "Central", industries: ["Rice Mills","Bronze Casting","Agro Processing"] },
-  { name: "Ramanathapuram",  micro: 41414,  small: 163,  medium: 5,   tier: 3, region: "South",   industries: ["Marine Products","Salt","Agro Processing"] },
-  { name: "Tenkasi",         micro: 38291,  small: 131,  medium: 1,   tier: 3, region: "South",   industries: ["Agro Processing","Spices","Rice Mills"] },
-  { name: "Tirupathur",      micro: 36906,  small: 80,   medium: 1,   tier: 3, region: "North",   industries: ["Leather","Agro Processing","Poultry"] },
-  { name: "Karur",           micro: 34504,  small: 222,  medium: 8,   tier: 3, region: "Central", industries: ["Home Textiles","Textiles","Bus Body Building"] },
-  { name: "Ranipet",         micro: 33821,  small: 110,  medium: 4,   tier: 3, region: "North",   industries: ["Leather","Heavy Engineering","Chemicals","Ceramics"] },
-  { name: "Kallakurichi",    micro: 30238,  small: 98,   medium: 2,   tier: 3, region: "North",   industries: ["Agro Processing","Rice Mills","Handlooms"] },
-  { name: "Nagapattinam",    micro: 29968,  small: 107,  medium: 0,   tier: 3, region: "Central", industries: ["Marine Products","Chemicals","Salt","Rice Mills"] },
-  { name: "Mayiladuthurai",  micro: 28360,  small: 70,   medium: 1,   tier: 3, region: "Central", industries: ["Rice Mills","Agro Processing","Tourism"] },
-  { name: "The Nilgiris",    micro: 26739,  small: 91,   medium: 6,   tier: 3, region: "West",    industries: ["Tea & Coffee","Essential Oils","Tourism","Spices"] },
-  { name: "Ariyalur",        micro: 25037,  small: 110,  medium: 5,   tier: 3, region: "Central", industries: ["Cement","Limestone","Agro Processing"] },
-  { name: "Perambalur",      micro: 17519,  small: 113,  medium: 3,   tier: 3, region: "Central", industries: ["Agro Processing","Rice Mills","Dairy"] },
-];
+// Fallback (empty — data comes from DB)
+const FALLBACK_DISTRICTS = [];
 
 const SM = {
   "Textiles":             { s: ["eCommerce SEO","International SEO","Shopify Store","Instagram SMO","GEO"],  i: "🧵" },
