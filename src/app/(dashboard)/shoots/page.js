@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   ClapperboardIcon, PlusIcon, SearchIcon, LoaderIcon,
-  MapPinIcon, CalendarIcon, UserIcon,
+  MapPinIcon, CalendarIcon, UserIcon, Trash2Icon,
 } from "lucide-react";
 
 const STATUS_COLORS = {
@@ -68,6 +68,13 @@ export default function Shoots() {
     }
     load();
   }, []);
+
+  async function handleDelete(e, shootId) {
+    e.stopPropagation();
+    if (!confirm("Delete this shoot and all its expenses?")) return;
+    await supabase.from("shoots").delete().eq("id", shootId);
+    setShoots((prev) => prev.filter((s) => s.id !== shootId));
+  }
 
   const filtered = shoots
     .filter((s) => {
@@ -176,9 +183,16 @@ export default function Shoots() {
                       </p>
                     )}
                   </div>
-                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${STATUS_COLORS[shoot.status] || STATUS_COLORS.upcoming}`}>
-                    {STATUS_LABELS[shoot.status] || shoot.status}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${STATUS_COLORS[shoot.status] || STATUS_COLORS.upcoming}`}>
+                      {STATUS_LABELS[shoot.status] || shoot.status}
+                    </span>
+                    {isPrivileged && (
+                      <button onClick={(e) => handleDelete(e, shoot.id)} className="p-1 rounded text-muted-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors" title="Delete shoot">
+                        <Trash2Icon size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4">
