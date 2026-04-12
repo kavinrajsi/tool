@@ -53,16 +53,17 @@ export default function MSMEDirectory() {
     if (district) fetchData();
   }, [fetchData, district]);
 
-  // Load districts list on mount
+  // Load districts from Supabase udyam_districts table (already populated)
   useEffect(() => {
-    if (!token) return;
-    fetch(`/api/msme?limit=1`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.districts) setDistricts(data.districts);
-      })
-      .catch(() => {});
-  }, [token]);
+    supabase
+      .from("udyam_districts")
+      .select("district_name")
+      .eq("state_name", "TAMIL NADU")
+      .order("district_name")
+      .then(({ data }) => {
+        if (data) setDistricts(data.map((d) => d.district_name));
+      });
+  }, []);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
