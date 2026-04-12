@@ -45,7 +45,7 @@ export default function MSMESyncDashboard() {
 
     addLog(`Starting sync for ${selected}...`);
 
-    let url = `/api/cron/msme-sync?district=${encodeURIComponent(selected)}&offset=0&fresh=true`;
+    let url = `/api/msme-sync?district=${encodeURIComponent(selected)}&offset=0&fresh=true`;
     let totalInserted = 0;
 
     while (url && !abortRef.current) {
