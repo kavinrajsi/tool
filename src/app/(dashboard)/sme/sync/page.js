@@ -52,6 +52,10 @@ export default function MSMESyncDashboard() {
       try {
         addLog(`Fetching batch at offset ${totalInserted}...`);
         const res = await fetch(url);
+        if (!res.ok) {
+          addLog(`HTTP ${res.status}: ${res.statusText}`, "error");
+          break;
+        }
         const data = await res.json();
 
         if (data.error) {

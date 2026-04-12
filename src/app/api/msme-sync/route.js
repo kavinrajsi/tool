@@ -35,6 +35,9 @@ async function insertRecords(sql, records) {
 }
 
 export async function GET(req) {
+  if (!API_KEY) {
+    return NextResponse.json({ error: "UDYAM_API_KEY environment variable is not set" }, { status: 500 });
+  }
 
   const { searchParams } = new URL(req.url);
   const district = searchParams.get("district");
@@ -69,7 +72,7 @@ export async function GET(req) {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS idx_msme_district ON msme_units (district)`;
-    await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`;
+    try { await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`; } catch {}
 
     // Clear old data on fresh sync
     if (fresh && startOffset === 0) {
