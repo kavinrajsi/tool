@@ -61,6 +61,8 @@ const titles = {
   "/activity-log": "Activity Log",
   "/shoots": "Shoots",
   "/shoots/add": "Add Shoot",
+  "/shoots/categories": "Expense Categories",
+  "/shoots/vendors": "Vendors",
   "/sme": "SME Explorer",
   "/leads": "Contact Form Submissions",
   "/sme/contacts": "SME Contacts",

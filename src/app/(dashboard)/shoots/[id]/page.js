@@ -9,10 +9,7 @@ import {
   UploadIcon, Trash2Icon,
 } from "lucide-react";
 
-const CATEGORIES = [
-  "travel", "food", "equipment", "talent", "location", "transport",
-  "accommodation", "props", "post_production", "misc",
-];
+// Categories loaded from DB at runtime
 
 const CATEGORY_COLORS = {
   travel: "bg-blue-500/10 text-blue-400",
@@ -60,6 +57,8 @@ function ShootDetail({ params }) {
   const [saving, setSaving] = useState(false);
   const [receiptFile, setReceiptFile] = useState(null);
   const [signedUrls, setSignedUrls] = useState({});
+  const [categories, setCategories] = useState([]);
+  const [vendors, setVendors] = useState([]);
   const [form, setForm] = useState({
     title: "", category: "misc", amount: "", currency: "INR", expense_date: "",
     vendor_name: "", vendor_gst: "", invoice_number: "", invoice_date: "",
@@ -99,6 +98,14 @@ function ShootDetail({ params }) {
         }
         setSignedUrls(urls);
       }
+
+      // Load categories and vendors
+      supabase.from("shoot_categories").select("name").order("name").then(({ data: c }) => {
+        if (c) setCategories(c.map((x) => x.name));
+      });
+      supabase.from("shoot_vendors").select("*").order("name").then(({ data: v }) => {
+        if (v) setVendors(v);
+      });
 
       setLoading(false);
     }
@@ -297,7 +304,7 @@ function ShootDetail({ params }) {
             <div>
               <label className="text-xs font-medium mb-1 block">Category <span className="text-red-400">*</span></label>
               <select value={form.category} onChange={(e) => set("category", e.target.value)} className={inputCls}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c.replace("_", " ")}</option>)}
+                {categories.map((c) => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
               </select>
             </div>
             <div>
@@ -309,12 +316,24 @@ function ShootDetail({ params }) {
               <input type="date" value={form.expense_date} onChange={(e) => set("expense_date", e.target.value)} className={inputCls} />
             </div>
             <div>
-              <label className="text-xs font-medium mb-1 block">Vendor Name</label>
-              <input value={form.vendor_name} onChange={(e) => set("vendor_name", e.target.value)} placeholder="Vendor / supplier" className={inputCls} />
+              <label className="text-xs font-medium mb-1 block">Vendor</label>
+              <select
+                value={form.vendor_name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  set("vendor_name", name);
+                  const v = vendors.find((x) => x.name === name);
+                  if (v) set("vendor_gst", v.gst_number || "");
+                }}
+                className={inputCls}
+              >
+                <option value="">Select vendor...</option>
+                {vendors.map((v) => <option key={v.id} value={v.name}>{v.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">Vendor GST</label>
-              <input value={form.vendor_gst} onChange={(e) => set("vendor_gst", e.target.value)} placeholder="GST number" className={inputCls} />
+              <input value={form.vendor_gst} onChange={(e) => set("vendor_gst", e.target.value)} placeholder="Auto-filled from vendor" className={inputCls} />
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">Invoice Number</label>

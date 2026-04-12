@@ -122,8 +122,10 @@ const navMain = [
     url: "/shoots",
     icon: <ClapperboardIcon />,
     subItems: [
-      { title: "All Shoots", url: "/shoots" },
-      { title: "Add Shoot",  url: "/shoots/add" },
+      { title: "All Shoots",  url: "/shoots" },
+      { title: "Add Shoot",   url: "/shoots/add" },
+      { title: "Categories",  url: "/shoots/categories" },
+      { title: "Vendors",     url: "/shoots/vendors" },
     ],
   },
   {

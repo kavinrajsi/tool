@@ -55,6 +55,8 @@ const ALL_PAGES = [
   // Shoots
   { path: "/shoots",              label: "All Shoots",           group: "Shoots" },
   { path: "/shoots/add",          label: "Add Shoot",            group: "Shoots" },
+  { path: "/shoots/categories",   label: "Categories",           group: "Shoots" },
+  { path: "/shoots/vendors",      label: "Vendors",              group: "Shoots" },
   // HR
   { path: "/employees",            label: "Employees",            group: "HR" },
   { path: "/departments",          label: "Departments",          group: "HR" },
