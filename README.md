@@ -142,6 +142,9 @@ GOOGLE_SERVER_API_KEY=
 # Email (Resend — for SEO monitoring alerts)
 RESEND_API_KEY=
 
+# UDYAM MSME API (data.gov.in)
+UDYAM_API_KEY=
+
 # AI API keys are added per-user via the Settings page
 ```
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-const API_KEY = "579b464db66ec23bdd0000010e1f30585df749af4f902f8b056d6696";
+const API_KEY = process.env.UDYAM_API_KEY;
 const RESOURCE_ID = "c3dfe7e6-0cfd-4ddb-8f79-9cb3695d9866";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 
