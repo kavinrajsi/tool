@@ -63,8 +63,9 @@ const titles = {
   "/shoots/add": "Add Shoot",
   "/shoots/categories": "Expense Categories",
   "/shoots/vendors": "Vendors",
-  "/sme/contacts": "SME Contacts",
+  "/sme": "SME Explorer",
   "/leads": "Contact Form Submissions",
+  "/sme/contacts": "SME Contacts",
 }
 
 export function DashboardHeader() {
