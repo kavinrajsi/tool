@@ -690,52 +690,16 @@ export default function Profile() {
             );
           })}
 
-          {/* Employment section — editable by admin/owner only */}
+          {/* Employment section — view only */}
           <div className="rounded-lg border border-border bg-card p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium flex items-center gap-2">
                 <EMPLOYMENT_SECTION.icon className="h-4 w-4 text-muted-foreground" /> {EMPLOYMENT_SECTION.title}
               </h3>
-              {isAdmin && (
-                editing !== "employment" ? (
-                  <button
-                    onClick={() => startEditing("employment")}
-                    className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-                  >
-                    <PencilIcon size={12} /> Edit
-                  </button>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button onClick={cancelEditing} disabled={saving} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
-                      <XIcon size={12} /> Cancel
-                    </button>
-                    <button onClick={handleSave} disabled={saving} className="text-xs text-primary hover:text-primary/80 flex items-center gap-1 font-medium transition-colors">
-                      {saving ? <LoaderIcon size={12} className="animate-spin" /> : <SaveIcon size={12} />}
-                      {saving ? "Saving..." : "Save"}
-                    </button>
-                  </div>
-                )
-              )}
             </div>
-            {editing === "employment" && saveError && (
-              <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400 mb-4">{saveError}</div>
-            )}
             <div className="grid grid-cols-2 gap-x-8 gap-y-3">
               {EMPLOYMENT_SECTION.fields.map((field) => (
-                editing === "employment" ? (
-                  <div key={field.key}>
-                    <p className="text-[11px] text-muted-foreground mb-1">{field.label}</p>
-                    <EditableInput
-                      value={editData[field.key]}
-                      onChange={(val) => setEditData((prev) => ({ ...prev, [field.key]: val }))}
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      options={field.options}
-                    />
-                  </div>
-                ) : (
-                  <DetailField key={field.key} label={field.label} value={employee[field.key] || (field.key === "employee_status" ? "active" : undefined)} />
-                )
+                <DetailField key={field.key} label={field.label} value={employee[field.key] || (field.key === "employee_status" ? "active" : undefined)} />
               ))}
             </div>
           </div>
