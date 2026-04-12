@@ -41,12 +41,18 @@ export default function Employees() {
   }, []);
 
   async function loadEmployees() {
-    const { data } = await supabase.from("employees").select("*");
+    const { data } = await supabase.from("employees").select("id, first_name, middle_name, last_name, work_email, employee_number, department, date_of_joining, date_of_birth, date_of_exit, employee_status, employee_type, avatar_url");
     if (data) {
-      const active = data
+      // Resolve avatar signed URLs
+      const withAvatars = await Promise.all(data.map(async (emp) => {
+        if (!emp.avatar_url) return emp;
+        const { data: signed } = await supabase.storage.from("employee-documents").createSignedUrl(emp.avatar_url, 3600);
+        return { ...emp, avatarSigned: signed?.signedUrl || null };
+      }));
+      const active = withAvatars
         .filter((e) => e.employee_status !== "inactive")
         .sort((a, b) => (a.date_of_joining || "").localeCompare(b.date_of_joining || ""));
-      const inactive = data
+      const inactive = withAvatars
         .filter((e) => e.employee_status === "inactive")
         .sort((a, b) => (a.date_of_exit || "").localeCompare(b.date_of_exit || ""));
       setEmployees([...active, ...inactive]);
@@ -172,12 +178,21 @@ export default function Employees() {
           </div>
           {filtered.map((emp, i) => (
             <div key={emp.id} onClick={() => openEmployee(emp)} className={`grid grid-cols-[1fr_140px_100px_100px_80px] gap-2 px-4 py-3 items-center cursor-pointer hover:bg-muted/20 transition-colors ${i < filtered.length - 1 ? "border-b border-border/50" : ""}`}>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium truncate">{emp.first_name} {emp.middle_name && emp.middle_name !== "-" ? emp.middle_name + " " : ""}{emp.last_name}</p>
-                  {emp.employee_number && <span className="text-[10px] text-muted-foreground font-mono shrink-0">{emp.employee_number}</span>}
+              <div className="min-w-0 flex items-center gap-3">
+                {emp.avatarSigned ? (
+                  <img src={emp.avatarSigned} alt="" className="h-8 w-8 rounded-full object-cover shrink-0 ring-1 ring-border" />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-[10px] font-bold shrink-0 ring-1 ring-border">
+                    {emp.first_name?.[0]}{emp.last_name?.[0]}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium truncate">{emp.first_name} {emp.middle_name && emp.middle_name !== "-" ? emp.middle_name + " " : ""}{emp.last_name}</p>
+                    {emp.employee_number && <span className="text-[10px] text-muted-foreground font-mono shrink-0">{emp.employee_number}</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground truncate">{emp.work_email}</p>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{emp.work_email}</p>
               </div>
               <span className="text-xs text-muted-foreground truncate">{emp.department || "—"}</span>
               {inlineEdit?.id === emp.id && inlineEdit.field === "date_of_joining" ? (

@@ -184,6 +184,10 @@ export default function Profile() {
   }
 
   // Document re-upload
+  // Avatar
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
   const [panFile, setPanFile] = useState(null);
   const [aadhaarFile, setAadhaarFile] = useState(null);
   const [resumeFile, setResumeFile] = useState(null);
@@ -230,6 +234,10 @@ export default function Profile() {
       if (emp) {
         setEmployee(emp);
         if (emp.role === "admin" || emp.role === "owner" || emp.role === "hr") setIsAdmin(true);
+        if (emp.avatar_url) {
+          const url = await getSignedUrl(emp.avatar_url);
+          if (url) setAvatarUrl(url);
+        }
 
         // Resolve signed URLs for employee documents
         const docUrls = {};
@@ -357,6 +365,34 @@ export default function Profile() {
       setEditData({});
     }
     setSaving(false);
+  }
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return;
+    if (file.size > 2 * 1024 * 1024) return;
+
+    setUploadingAvatar(true);
+
+    // Delete old avatar if exists
+    if (employee.avatar_url) {
+      await supabase.storage.from("employee-documents").remove([employee.avatar_url]);
+    }
+
+    const ext = file.name.split(".").pop();
+    const path = `avatars/${employee.id}-${Date.now()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from("employee-documents")
+      .upload(path, file, { contentType: file.type });
+
+    if (!uploadErr) {
+      await supabase.from("employees").update({ avatar_url: path }).eq("id", employee.id);
+      setEmployee((prev) => ({ ...prev, avatar_url: path }));
+      const url = await getSignedUrl(path);
+      if (url) setAvatarUrl(url);
+    }
+    setUploadingAvatar(false);
   }
 
   async function handleDocUpload(type) {
@@ -573,9 +609,19 @@ export default function Profile() {
           Account Information
         </h3>
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-semibold">
-              {(user?.email || "U")[0].toUpperCase()}
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="h-16 w-16 rounded-full object-cover ring-2 ring-border" />
+              ) : (
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xl font-semibold ring-2 ring-border">
+                  {employee ? `${employee.first_name?.[0] || ""}${employee.last_name?.[0] || ""}` : (user?.email || "U")[0].toUpperCase()}
+                </div>
+              )}
+              <label className={`absolute inset-0 rounded-full flex items-center justify-center bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer ${uploadingAvatar ? "opacity-100" : ""}`}>
+                {uploadingAvatar ? <LoaderIcon size={16} className="animate-spin" /> : <UploadIcon size={16} />}
+                <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+              </label>
             </div>
             <div>
               <p className="font-medium">{user?.email}</p>

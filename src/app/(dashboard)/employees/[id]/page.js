@@ -76,6 +76,7 @@ function EmployeeDetail({ params }) {
   const [workHistory, setWorkHistory] = useState([]);
   const [departmentList, setDepartmentList] = useState([]);
   const [designationList, setDesignationList] = useState([]);
+  const [avatarUrl, setAvatarUrl] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -89,6 +90,10 @@ function EmployeeDetail({ params }) {
           .eq("employee_id", data.id)
           .order("from_year", { ascending: false });
         if (wh) setWorkHistory(wh);
+        if (data.avatar_url) {
+          const { data: signed } = await supabase.storage.from("employee-documents").createSignedUrl(data.avatar_url, 3600);
+          if (signed?.signedUrl) setAvatarUrl(signed.signedUrl);
+        }
       }
       supabase.from("departments").select("name").order("name").then(({ data: d }) => {
         if (d) setDepartmentList(d.map((x) => x.name));
@@ -148,6 +153,13 @@ function EmployeeDetail({ params }) {
           <button onClick={() => router.push("/employees")} className="p-2 rounded-md border border-border hover:bg-muted transition-colors">
             <ArrowLeftIcon size={16} />
           </button>
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="h-12 w-12 rounded-full object-cover ring-2 ring-border" />
+          ) : (
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold ring-2 ring-border">
+              {employee.first_name?.[0]}{employee.last_name?.[0]}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight">

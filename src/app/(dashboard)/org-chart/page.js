@@ -4,12 +4,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { NetworkIcon, XIcon, BuildingIcon, UsersIcon } from "lucide-react";
 
-function Avatar({ first, last, size = "md" }) {
+function Avatar({ first, last, avatarUrl, size = "md" }) {
   const sz = {
     sm: "h-8 w-8 text-[10px]",
     md: "h-10 w-10 text-xs",
     lg: "h-16 w-16 text-xl",
   }[size];
+  if (avatarUrl) {
+    return <img src={avatarUrl} alt={`${first} ${last}`} className={`${sz} rounded-full object-cover shrink-0 ring-2 ring-background`} />;
+  }
   return (
     <div className={`${sz} rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary shrink-0 ring-2 ring-background`}>
       {first?.[0]}{last?.[0]}
@@ -30,7 +33,7 @@ function EmpDrawer({ emp, onClose }) {
         </div>
         <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
           <div className="flex flex-col items-center gap-3 py-2">
-            <Avatar first={emp.first_name} last={emp.last_name} size="lg" />
+            <Avatar first={emp.first_name} last={emp.last_name} avatarUrl={emp.avatarSigned} size="lg" />
             <div className="text-center">
               <p className="text-base font-semibold">{emp.first_name} {emp.last_name}</p>
               {emp.designation && <p className="text-xs text-muted-foreground mt-0.5">{emp.designation}</p>}
@@ -70,9 +73,18 @@ export default function OrgChartPage() {
     setLoading(true);
     const { data } = await supabase
       .from("employees")
-      .select("id, first_name, last_name, designation, department, work_email, mobile_number, date_of_joining, blood_type, employee_number, employee_status")
+      .select("id, first_name, last_name, designation, department, work_email, mobile_number, date_of_joining, blood_type, employee_number, employee_status, avatar_url")
       .order("first_name");
-    if (data) setEmployees(data.filter(e => e.employee_status !== "inactive"));
+    if (data) {
+      const active = data.filter(e => e.employee_status !== "inactive");
+      // Resolve avatar signed URLs
+      const withAvatars = await Promise.all(active.map(async (emp) => {
+        if (!emp.avatar_url) return emp;
+        const { data: signed } = await supabase.storage.from("employee-documents").createSignedUrl(emp.avatar_url, 3600);
+        return { ...emp, avatarSigned: signed?.signedUrl || null };
+      }));
+      setEmployees(withAvatars);
+    }
     setLoading(false);
   }
 
@@ -176,7 +188,7 @@ export default function OrgChartPage() {
           {filtered.map(emp => (
             <button key={emp.id} onClick={() => setSelectedEmp(emp)}
               className="flex flex-col items-center gap-2.5 p-4 rounded-2xl border border-border bg-card hover:bg-muted/30 hover:border-primary/30 transition-all shadow-sm group text-center">
-              <Avatar first={emp.first_name} last={emp.last_name} size="lg" />
+              <Avatar first={emp.first_name} last={emp.last_name} avatarUrl={emp.avatarSigned} size="lg" />
               <div>
                 <p className="text-xs font-semibold group-hover:text-primary transition-colors leading-snug">
                   {emp.first_name} {emp.last_name}
@@ -229,7 +241,7 @@ export default function OrgChartPage() {
                                 onClick={() => setSelectedEmp(emp)}
                                 className="flex flex-col items-center gap-2 px-3 py-3 rounded-2xl border border-border bg-card hover:bg-muted/30 hover:border-primary/30 transition-all shadow-sm w-36 group"
                               >
-                                <Avatar first={emp.first_name} last={emp.last_name} />
+                                <Avatar first={emp.first_name} last={emp.last_name} avatarUrl={emp.avatarSigned} />
                                 <div className="text-center">
                                   <p className="text-[11px] font-semibold leading-tight group-hover:text-primary transition-colors">
                                     {emp.first_name} {emp.last_name}
@@ -265,7 +277,7 @@ export default function OrgChartPage() {
                     {unassigned.slice(0, 12).map(emp => (
                       <button key={emp.id} onClick={() => setSelectedEmp(emp)}
                         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-border bg-card hover:bg-muted/30 hover:border-primary/30 transition-all shadow-sm group">
-                        <Avatar first={emp.first_name} last={emp.last_name} size="sm" />
+                        <Avatar first={emp.first_name} last={emp.last_name} avatarUrl={emp.avatarSigned} size="sm" />
                         <span className="text-[11px] font-medium group-hover:text-primary transition-colors">
                           {emp.first_name} {emp.last_name}
                         </span>
