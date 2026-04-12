@@ -1,11 +1,55 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { XIcon, ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { supabase } from "@/lib/supabase";
+import { XIcon, ArrowUpDownIcon, ChevronUpIcon, ChevronDownIcon, LoaderIcon, RefreshCwIcon } from "lucide-react";
 
-// ─── Data ─────────────────────────────────────────────────────────────────────
+// ─── Industry & Service Mapping (hardcoded — not in API) ─────────────────────
 
-const DISTRICTS = [
+// District → industries mapping for Tamil Nadu
+const DISTRICT_INDUSTRIES = {
+  "CHENNAI":         ["IT/ITES","Auto Components","Engineering","Electronics","Leather","Pharma","Logistics"],
+  "COIMBATORE":      ["Textiles","Pumps & Motors","Foundry","Engineering","IT/ITES","Food Processing"],
+  "MADURAI":         ["Textiles","Food Processing","Rubber","Granite","Tourism","Healthcare"],
+  "THIRUVALLUR":     ["Auto Components","Engineering","Leather","Electronics","Logistics"],
+  "SALEM":           ["Steel","Textiles","Sago & Tapioca","Sericulture","Agro Processing"],
+  "TIRUCHIRAPPALLI": ["Heavy Engineering","Leather","Food Processing","Agro Processing"],
+  "TIRUPPUR":        ["Knitwear & Hosiery","Garment Export","Textiles","Dyeing & Bleaching"],
+  "KANCHIPURAM":     ["Silk Sarees","Handlooms","Auto Components","Electronics","Engineering"],
+  "CUDDALORE":       ["Chemicals","Sugar","Salt","Marine Products","Leather"],
+  "THANJAVUR":       ["Rice Mills","Tanjore Art","Musical Instruments","Sugar","Tourism"],
+  "CHENGALPATTU":    ["Auto Components","IT/ITES","Electronics","Logistics"],
+  "ERODE":           ["Textiles","Turmeric & Spices","Handlooms","Sugar","Agro Processing"],
+  "DINDIGUL":        ["Locks","Leather","Textiles","Agro Processing","Spices"],
+  "KRISHNAGIRI":     ["Fruit Processing","Silk","Granite","Poultry","Agro Processing"],
+  "VELLORE":         ["Leather","Footwear","Auto Components","Agro Processing"],
+  "VILLUPURAM":      ["Sugar","Rice Mills","Leather","Agro Processing"],
+  "KANNIYAKUMARI":   ["Marine Products","Rubber","Coir","Cashew","Tourism"],
+  "TIRUNELVELI":     ["Renewable Energy","Rice Mills","Agro Processing"],
+  "TIRUVANNAMALAI":  ["Agro Processing","Rice Mills","Handlooms","Sugar","Tourism"],
+  "NAMAKKAL":        ["Poultry & Eggs","Transport","Textiles","Agro Processing"],
+  "TUTICORIN":       ["Salt","Marine Products","Chemicals","Port/Logistics"],
+  "DHARMAPURI":      ["Sericulture","Sago","Poultry","Agro Processing"],
+  "VIRUDHUNAGAR":    ["Fireworks & Crackers","Printing & Packaging","Safety Matches","Textiles"],
+  "PUDUKKOTTAI":     ["Cement","Granite","Agro Processing","Marine Products"],
+  "THENI":           ["Spices","Cotton Mills","Agro Processing","Tourism"],
+  "SIVAGANGA":       ["Cement","Agro Processing","Handlooms","Tourism"],
+  "THIRUVARUR":      ["Rice Mills","Bronze Casting","Agro Processing"],
+  "RAMANATHAPURAM":  ["Marine Products","Salt","Agro Processing"],
+  "TENKASI":         ["Agro Processing","Spices","Rice Mills"],
+  "TIRUPATHUR":      ["Leather","Agro Processing","Poultry"],
+  "KARUR":           ["Home Textiles","Textiles","Bus Body Building"],
+  "RANIPET":         ["Leather","Heavy Engineering","Chemicals","Ceramics"],
+  "KALLAKURICHI":    ["Agro Processing","Rice Mills","Handlooms"],
+  "NAGAPATTINAM":    ["Marine Products","Chemicals","Salt","Rice Mills"],
+  "MAYILADUTHURAI":  ["Rice Mills","Agro Processing","Tourism"],
+  "THE NILGIRIS":    ["Tea & Coffee","Essential Oils","Tourism","Spices"],
+  "ARIYALUR":        ["Cement","Limestone","Agro Processing"],
+  "PERAMBALUR":      ["Agro Processing","Rice Mills","Dairy"],
+};
+
+// Fallback hardcoded data (used if DB is empty)
+const FALLBACK_DISTRICTS = [
   { name: "Chennai",         micro: 362363, small: 6405, medium: 521, tier: 1, region: "North",   industries: ["IT/ITES","Auto Components","Engineering","Electronics","Leather","Pharma","Logistics"] },
   { name: "Coimbatore",      micro: 210002, small: 2076, medium: 144, tier: 1, region: "West",    industries: ["Textiles","Pumps & Motors","Foundry","Engineering","IT/ITES","Food Processing"] },
   { name: "Madurai",         micro: 132880, small: 1003, medium: 50,  tier: 1, region: "South",   industries: ["Textiles","Food Processing","Rubber","Granite","Tourism","Healthcare"] },
@@ -151,27 +195,55 @@ export default function SMEPage() {
   const [viewMode,      setViewMode]      = useState("table");
   const [selected,      setSelected]      = useState(null);
   const [search,        setSearch]        = useState("");
+  const [stateFilter,   setStateFilter]   = useState("TAMIL NADU");
   const [tierFilter,    setTierFilter]    = useState("All");
-  const [regionFilter,  setRegionFilter]  = useState("All");
   const [industryFilter,setIndustryFilter]= useState("All");
   const [serviceFilter, setServiceFilter] = useState("All");
   const [sortCol,       setSortCol]       = useState("total");
   const [sortDir,       setSortDir]       = useState("desc");
+  const [dbDistricts,   setDbDistricts]   = useState([]);
+  const [states,        setStates]        = useState([]);
+  const [loading,       setLoading]       = useState(true);
 
-  const allIndustries = useMemo(() => [...new Set(DISTRICTS.flatMap(d => d.industries))].sort(), []);
+  useEffect(() => {
+    async function load() {
+      const { data } = await supabase.from("udyam_districts").select("*").order("total", { ascending: false });
+      if (data && data.length > 0) {
+        setDbDistricts(data);
+        setStates([...new Set(data.map((d) => d.state_name))].sort());
+      }
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  // Use DB data or fallback to hardcoded
+  const DISTRICTS = useMemo(() => {
+    if (dbDistricts.length > 0) {
+      const stateData = stateFilter === "All" ? dbDistricts : dbDistricts.filter((d) => d.state_name === stateFilter);
+      return stateData.map((d) => {
+        const total = d.micro + d.small + d.medium;
+        const tier = total >= 100000 ? 1 : total >= 50000 ? 2 : 3;
+        const industries = DISTRICT_INDUSTRIES[d.district_name.toUpperCase()] || [];
+        return { name: d.district_name, micro: d.micro, small: d.small, medium: d.medium, tier, industries };
+      });
+    }
+    return FALLBACK_DISTRICTS;
+  }, [dbDistricts, stateFilter]);
+
+  const allIndustries = useMemo(() => [...new Set(DISTRICTS.flatMap(d => d.industries))].sort(), [DISTRICTS]);
   const allServices   = useMemo(() => [...new Set(Object.values(SM).flatMap(s => s.s))].sort(), []);
 
   const filtered = useMemo(() => {
     let r = DISTRICTS.filter(d => {
       if (search && !d.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (tierFilter   !== "All" && d.tier   !== parseInt(tierFilter))    return false;
-      if (regionFilter !== "All" && d.region !== regionFilter)            return false;
       if (industryFilter !== "All" && !d.industries.includes(industryFilter)) return false;
       if (serviceFilter  !== "All") return d.industries.some(ind => SM[ind]?.s?.includes(serviceFilter));
       return true;
     });
     return r;
-  }, [search, tierFilter, regionFilter, industryFilter, serviceFilter]);
+  }, [DISTRICTS, search, tierFilter, industryFilter, serviceFilter]);
 
   const sorted = useMemo(() => {
     const r = [...filtered];
@@ -190,7 +262,7 @@ export default function SMEPage() {
   function toggle(name) { setSelected(s => s === name ? null : name); }
 
   function resetFilters() {
-    setSearch(""); setTierFilter("All"); setRegionFilter("All");
+    setSearch(""); setTierFilter("All");
     setIndustryFilter("All"); setServiceFilter("All");
     setSortCol("total"); setSortDir("desc");
     setSelected(null);
@@ -203,6 +275,10 @@ export default function SMEPage() {
   const sel = selected ? DISTRICTS.find(d => d.name === selected) : null;
 
   const selectCls = "w-full px-2.5 py-2 bg-background border border-border rounded-lg text-sm outline-none text-foreground focus:ring-2 focus:ring-primary/60";
+
+  if (loading) {
+    return <div className="flex flex-1 items-center justify-center py-16"><LoaderIcon size={20} className="animate-spin text-muted-foreground" /></div>;
+  }
 
   return (
     <div className="flex flex-1 flex-col gap-0 py-4">
@@ -264,13 +340,10 @@ export default function SMEPage() {
             </select>
           </div>
           <div>
-            <label className="text-[11px] text-muted-foreground block mb-1 font-medium">Region</label>
-            <select className={selectCls} value={regionFilter} onChange={e => setRegionFilter(e.target.value)}>
-              <option value="All">All Regions</option>
-              <option value="North">North TN</option>
-              <option value="West">West TN</option>
-              <option value="Central">Central TN</option>
-              <option value="South">South TN</option>
+            <label className="text-[11px] text-muted-foreground block mb-1 font-medium">State</label>
+            <select className={selectCls} value={stateFilter} onChange={e => setStateFilter(e.target.value)}>
+              <option value="All">All States</option>
+              {states.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
           <div>
@@ -410,7 +483,7 @@ export default function SMEPage() {
                   <span className={`text-[11px] px-2 py-0.5 rounded-full font-semibold ${tierClass(sel.tier)}`}>
                     Tier {sel.tier}
                   </span>
-                  <span className="text-xs text-muted-foreground">{sel.region} Tamil Nadu</span>
+                  <span className="text-xs text-muted-foreground">{stateFilter !== "All" ? stateFilter : ""}</span>
                   <Stars tier={sel.tier} />
                 </div>
               </div>
