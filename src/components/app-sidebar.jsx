@@ -45,6 +45,7 @@ import {
   CheckSquare2Icon,
   InboxIcon,
   LogOutIcon,
+  ClapperboardIcon,
 } from "lucide-react"
 
 const navMain = [
@@ -114,6 +115,15 @@ const navMain = [
     subItems: [
       { title: "Product Catalog", url: "/shopify/products" },
       { title: "Order Tracker",   url: "/shopify/orders" },
+    ],
+  },
+  {
+    title: "Shoots",
+    url: "/shoots",
+    icon: <ClapperboardIcon />,
+    subItems: [
+      { title: "All Shoots", url: "/shoots" },
+      { title: "Add Shoot",  url: "/shoots/add" },
     ],
   },
   {

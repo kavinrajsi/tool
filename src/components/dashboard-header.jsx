@@ -59,6 +59,8 @@ const titles = {
   "/domain-renewals": "Domain Renewals",
   "/email-log": "Email Log",
   "/activity-log": "Activity Log",
+  "/shoots": "Shoots",
+  "/shoots/add": "Add Shoot",
   "/sme": "SME Explorer",
   "/leads": "Contact Form Submissions",
   "/sme/contacts": "SME Contacts",
@@ -66,7 +68,7 @@ const titles = {
 
 export function DashboardHeader() {
   const pathname = usePathname()
-  const title = titles[pathname] || (pathname.startsWith("/employees/") && pathname !== "/employees/register" ? "Employee Detail" : "Dashboard")
+  const title = titles[pathname] || (pathname.startsWith("/employees/") && pathname !== "/employees/register" ? "Employee Detail" : pathname.startsWith("/shoots/") && pathname !== "/shoots/add" ? "Shoot Detail" : "Dashboard")
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [time, setTime] = useState("")
