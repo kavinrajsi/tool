@@ -80,8 +80,8 @@ export async function GET(req) {
     await sql`CREATE INDEX IF NOT EXISTS idx_msme_district ON msme_units (district)`;
     try { await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`; } catch {}
 
-    // Clear old data on fresh sync
-    if (fresh && startOffset === 0) {
+    // Clear old data on first batch
+    if (startOffset === 0) {
       await sql`DELETE FROM msme_units WHERE district = ${district}`;
     }
 
