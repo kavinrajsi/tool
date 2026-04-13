@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/lib/supabase"; // for auth token
 import {
   BuildingIcon, SearchIcon, LoaderIcon, ChevronLeftIcon, ChevronRightIcon,
   MapPinIcon, CalendarIcon,
@@ -53,17 +53,16 @@ export default function MSMEDirectory() {
     if (district) fetchData();
   }, [fetchData, district]);
 
-  // Load districts from Supabase udyam_districts table (already populated)
+  // Load districts that have synced data in Neon
   useEffect(() => {
-    supabase
-      .from("udyam_districts")
-      .select("district_name")
-      .eq("state_name", "TAMIL NADU")
-      .order("district_name")
-      .then(({ data }) => {
-        if (data) setDistricts(data.map((d) => d.district_name));
-      });
-  }, []);
+    if (!token) return;
+    fetch("/api/msme?limit=1", { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.districts?.length > 0) setDistricts(data.districts);
+      })
+      .catch(() => {});
+  }, [token]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
