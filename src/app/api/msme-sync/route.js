@@ -6,7 +6,7 @@ const RESOURCE_ID = "8b68ae56-84cf-4728-a0a6-1be11028dea7";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 const STATE = "TAMIL NADU";
 const BATCH_SIZE = 500; // records per API call
-const MAX_PER_RUN = 5000; // max records per sync request (fits in 60s)
+const MAX_PER_RUN = 2000; // max records per sync request (fits in 60s)
 
 async function fetchPage(district, offset, limit) {
   const params = new URLSearchParams({
@@ -24,13 +24,19 @@ async function fetchPage(district, offset, limit) {
 }
 
 async function insertRecords(sql, records) {
-  for (const r of records) {
+  if (records.length === 0) return;
+  // Insert in parallel batches of 50 for speed
+  const promises = records.map((r) => {
     let activities = null;
     try { activities = JSON.parse(r.Activities || "[]"); } catch { activities = []; }
-    await sql`
+    return sql`
       INSERT INTO msme_units (state, district, pincode, registration_date, enterprise_name, address, activities, lg_st_code, lg_dt_code)
       VALUES (${r.State}, ${r.District}, ${r.Pincode?.replace(".0", "") || null}, ${r.RegistrationDate}, ${r.EnterpriseName}, ${r.CommunicationAddress || null}, ${JSON.stringify(activities)}, ${r.LG_ST_Code}, ${r.LG_DT_Code})
     `;
+  });
+  // Run 50 at a time in parallel
+  for (let i = 0; i < promises.length; i += 50) {
+    await Promise.all(promises.slice(i, i + 50));
   }
 }
 
