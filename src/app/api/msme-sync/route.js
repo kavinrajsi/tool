@@ -5,8 +5,8 @@ const API_KEY = process.env.UDYAM_API_KEY;
 const RESOURCE_ID = "8b68ae56-84cf-4728-a0a6-1be11028dea7";
 const BASE_URL = `https://api.data.gov.in/resource/${RESOURCE_ID}`;
 const STATE = "TAMIL NADU";
-const BATCH_SIZE = 500; // records per API call
-const MAX_PER_RUN = 2000; // max records per sync request (fits in 60s)
+const BATCH_SIZE = 50; // records per API call
+const MAX_PER_RUN = 50; // max records per sync request
 
 async function fetchPage(district, offset, limit) {
   const params = new URLSearchParams({

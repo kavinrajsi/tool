@@ -51,7 +51,10 @@ export default function MSMESyncDashboard() {
     while (url && !abortRef.current) {
       try {
         addLog(`Fetching batch at offset ${totalInserted}...`);
-        const res = await fetch(url);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 55000);
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
         if (!res.ok) {
           addLog(`HTTP ${res.status}: ${res.statusText}`, "error");
           break;
@@ -75,6 +78,10 @@ export default function MSMESyncDashboard() {
           url = data.next;
         }
       } catch (err) {
+        if (err.name === "AbortError") {
+          addLog(`Request timed out (55s). Retrying...`, "warn");
+          continue;
+        }
         addLog(`Network error: ${err.message}`, "error");
         break;
       }
