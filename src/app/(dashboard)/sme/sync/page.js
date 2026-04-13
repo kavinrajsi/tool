@@ -67,9 +67,10 @@ export default function MSMESyncDashboard() {
         }
 
         totalInserted += data.inserted || 0;
-        setProgress({ inserted: totalInserted, total: data.apiTotal || 0, done: data.done });
+        const dbTotal = data.dbTotal || totalInserted;
+        setProgress({ inserted: dbTotal, total: data.apiTotal || 0, done: data.done });
 
-        addLog(`Inserted ${data.inserted} records (${totalInserted.toLocaleString("en-IN")} / ${(data.apiTotal || 0).toLocaleString("en-IN")})`, "success");
+        addLog(`Inserted ${data.inserted} records — DB has ${dbTotal.toLocaleString("en-IN")} / ${(data.apiTotal || 0).toLocaleString("en-IN")}`, "success");
 
         if (data.done) {
           addLog(`Sync complete! ${totalInserted.toLocaleString("en-IN")} records synced for ${selected}.`, "success");

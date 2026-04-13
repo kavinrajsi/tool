@@ -80,10 +80,14 @@ export async function GET(req) {
     await sql`CREATE INDEX IF NOT EXISTS idx_msme_district ON msme_units (district)`;
     try { await sql`CREATE EXTENSION IF NOT EXISTS pg_trgm`; } catch {}
 
-    // Clear old data on first batch
-    if (startOffset === 0) {
+    // Clear old data only when explicitly requested
+    if (fresh) {
       await sql`DELETE FROM msme_units WHERE district = ${district}`;
     }
+
+    // Get current count in DB for this district
+    const countResult = await sql`SELECT count(*)::int as c FROM msme_units WHERE district = ${district}`;
+    const dbCount = countResult[0]?.c || 0;
 
     // Fetch records in batches up to MAX_PER_RUN
     let offset = startOffset;
@@ -102,14 +106,19 @@ export async function GET(req) {
 
     const done = offset >= apiTotal;
 
+    // Get updated DB count
+    const finalCount = await sql`SELECT count(*)::int as c FROM msme_units WHERE district = ${district}`;
+    const dbTotal = finalCount[0]?.c || 0;
+
     return NextResponse.json({
       ok: true,
       district,
       inserted,
       offset,
       apiTotal,
+      dbTotal,
       done,
-      next: done ? null : `/api/cron/msme-sync?district=${district}&offset=${offset}`,
+      next: done ? null : `/api/msme-sync?district=${district}&offset=${offset}`,
     });
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
