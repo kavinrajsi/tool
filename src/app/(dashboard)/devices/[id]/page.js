@@ -50,7 +50,9 @@ export default function DeviceDetail({ params }) {
   }
 
   async function handleAssign() {
-    if (!assignForm.name.trim() || !assignForm.empId.trim()) return;
+    const name = (manualEntry ? manualForm.name : assignForm.name).trim();
+    const empId = (manualEntry ? manualForm.empId : assignForm.empId).trim();
+    if (!name || !empId) return;
     setSaving(true);
     const now = new Date().toISOString().split("T")[0];
     const history = [...(device.assignment_history || [])];
@@ -62,10 +64,10 @@ export default function DeviceDetail({ params }) {
         returned_date: now,
       });
     }
-    const qrData = await regenerateQR(device, assignForm.name.trim());
+    const qrData = await regenerateQR(device, name);
     await supabase.from("devices").update({
-      assigned_employee_name: assignForm.name.trim(),
-      assigned_employee_id: assignForm.empId.trim(),
+      assigned_employee_name: name,
+      assigned_employee_id: empId,
       assignment_date: now,
       return_date: null,
       status: "Assigned",
@@ -361,27 +363,13 @@ export default function DeviceDetail({ params }) {
                       placeholder="Employee ID"
                       className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
                     />
-                    <div className="flex items-center justify-between">
-                      <button
-                        type="button"
-                        onClick={() => { setManualEntry(false); setManualForm({ name: "", empId: "" }); }}
-                        className="text-[11px] text-primary hover:underline"
-                      >
-                        ← Back to search
-                      </button>
-                      <button
-                        type="button"
-                        disabled={!manualForm.name.trim() || !manualForm.empId.trim()}
-                        onClick={() => {
-                          setAssignForm({ name: manualForm.name.trim(), empId: manualForm.empId.trim() });
-                          setManualForm({ name: "", empId: "" });
-                          setManualEntry(false);
-                        }}
-                        className="text-[11px] rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 px-3 py-1.5"
-                      >
-                        Use details
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setManualEntry(false); setManualForm({ name: "", empId: "" }); }}
+                      className="text-[11px] text-primary hover:underline"
+                    >
+                      ← Back to search
+                    </button>
                   </div>
                 ) : (
                   <div>
@@ -421,7 +409,18 @@ export default function DeviceDetail({ params }) {
                         const s = empSearch.toLowerCase();
                         return emp.first_name?.toLowerCase().includes(s) || emp.last_name?.toLowerCase().includes(s) || emp.employee_number?.toLowerCase().includes(s);
                       }).length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-3">No employees found</p>
+                        <div className="text-center py-3 px-3 space-y-2">
+                          <p className="text-xs text-muted-foreground">No employees found</p>
+                          {empSearch.trim() && (
+                            <button
+                              type="button"
+                              onClick={() => { setManualEntry(true); setManualForm({ name: empSearch.trim(), empId: "" }); setEmpSearch(""); }}
+                              className="text-[11px] rounded-md bg-primary/10 text-primary hover:bg-primary/20 px-3 py-1.5"
+                            >
+                              Use &quot;{empSearch.trim()}&quot; as manual entry
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     <button
@@ -435,7 +434,7 @@ export default function DeviceDetail({ params }) {
                 )}
               </div>
             </div>
-            <button onClick={handleAssign} disabled={saving} className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">{saving ? "Saving..." : "Assign"}</button>
+            <button onClick={handleAssign} disabled={saving || (manualEntry ? (!manualForm.name.trim() || !manualForm.empId.trim()) : (!assignForm.name.trim() || !assignForm.empId.trim()))} className="w-full rounded-md bg-primary py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed">{saving ? "Saving..." : "Assign"}</button>
           </div>
         </>
       )}
