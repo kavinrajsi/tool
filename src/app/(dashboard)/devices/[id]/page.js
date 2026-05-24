@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { STATUS_COLORS, COMPLAINT_PRIORITIES, COMPLAINT_STATUSES, isLaptop } from "@/lib/device-constants";
 import QRCode from "qrcode";
@@ -8,16 +9,20 @@ import {
   MonitorIcon, UserIcon, CalendarIcon, AlertTriangleIcon,
   PrinterIcon, QrCodeIcon, ArrowLeftRightIcon, CornerDownLeftIcon,
   PlusIcon, XIcon, CheckCircleIcon, ClockIcon, ExternalLinkIcon, PencilIcon, SearchIcon,
+  WrenchIcon, PowerIcon, RotateCcwIcon, Trash2Icon,
 } from "lucide-react";
 
 export default function DeviceDetail({ params }) {
   const { id } = use(params);
+  const router = useRouter();
   const [device, setDevice] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAssign, setShowAssign] = useState(false);
   const [showComplaint, setShowComplaint] = useState(false);
   const [assignForm, setAssignForm] = useState({ name: "", empId: "" });
   const [empSearch, setEmpSearch] = useState("");
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualForm, setManualForm] = useState({ name: "", empId: "" });
   const [employees, setEmployees] = useState([]);
   const [complaintForm, setComplaintForm] = useState({ reported_by: "", description: "", priority: "Medium" });
   const [saving, setSaving] = useState(false);
@@ -69,6 +74,8 @@ export default function DeviceDetail({ params }) {
     }).eq("id", id);
     setShowAssign(false);
     setAssignForm({ name: "", empId: "" });
+    setManualEntry(false);
+    setManualForm({ name: "", empId: "" });
     setSaving(false);
     loadDevice();
   }
@@ -95,6 +102,67 @@ export default function DeviceDetail({ params }) {
     }).eq("id", id);
     setSaving(false);
     loadDevice();
+  }
+
+  async function handleSendForRepair() {
+    setSaving(true);
+    await supabase.from("devices").update({ status: "In Repair" }).eq("id", id);
+    setSaving(false);
+    loadDevice();
+  }
+
+  async function handleMarkAvailable() {
+    setSaving(true);
+    const newStatus = device.assigned_employee_name ? "Assigned" : "Available";
+    await supabase.from("devices").update({ status: newStatus }).eq("id", id);
+    setSaving(false);
+    loadDevice();
+  }
+
+  async function handleRetire() {
+    if (!confirm("Retire this device? Any current assignment will be archived.")) return;
+    setSaving(true);
+    const now = new Date().toISOString().split("T")[0];
+    const history = [...(device.assignment_history || [])];
+    if (device.assigned_employee_name) {
+      history.push({
+        employee_name: device.assigned_employee_name,
+        employee_id: device.assigned_employee_id,
+        assigned_date: device.assignment_date,
+        returned_date: now,
+      });
+    }
+    const qrData = await regenerateQR(device, null);
+    await supabase.from("devices").update({
+      assigned_employee_name: null,
+      assigned_employee_id: null,
+      assignment_date: null,
+      return_date: now,
+      status: "Retired",
+      assignment_history: history,
+      qr_data: qrData,
+    }).eq("id", id);
+    setSaving(false);
+    loadDevice();
+  }
+
+  async function handleReactivate() {
+    setSaving(true);
+    await supabase.from("devices").update({ status: "Available" }).eq("id", id);
+    setSaving(false);
+    loadDevice();
+  }
+
+  async function handleDelete() {
+    if (!confirm(`Permanently delete ${device.device_id} (${device.model_name})? This cannot be undone.`)) return;
+    setSaving(true);
+    const { error } = await supabase.from("devices").delete().eq("id", id);
+    if (error) {
+      alert(`Failed to delete: ${error.message}`);
+      setSaving(false);
+      return;
+    }
+    router.push("/devices");
   }
 
   async function handleComplaint() {
@@ -165,7 +233,20 @@ export default function DeviceDetail({ params }) {
           </>
         )}
         <button onClick={() => setShowComplaint(true)} className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted/30 transition-colors"><AlertTriangleIcon size={12} /> File Complaint</button>
+        {(device.status === "Available" || device.status === "Assigned") && (
+          <button onClick={handleSendForRepair} disabled={saving} className="flex items-center gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-md transition-colors disabled:opacity-50"><WrenchIcon size={12} /> Send for Repair</button>
+        )}
+        {device.status === "In Repair" && (
+          <button onClick={handleMarkAvailable} disabled={saving} className="flex items-center gap-1.5 text-xs bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md transition-colors disabled:opacity-50"><CheckCircleIcon size={12} /> Mark {device.assigned_employee_name ? "Assigned" : "Available"}</button>
+        )}
+        {device.status !== "Retired" && (
+          <button onClick={handleRetire} disabled={saving} className="flex items-center gap-1.5 text-xs bg-zinc-500 hover:bg-zinc-600 text-white px-3 py-2 rounded-md transition-colors disabled:opacity-50"><PowerIcon size={12} /> Retire</button>
+        )}
+        {device.status === "Retired" && (
+          <button onClick={handleReactivate} disabled={saving} className="flex items-center gap-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-md transition-colors disabled:opacity-50"><RotateCcwIcon size={12} /> Reactivate</button>
+        )}
         <button onClick={handlePrint} className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted/30 transition-colors"><PrinterIcon size={12} /> Print Label</button>
+        <button onClick={handleDelete} disabled={saving} className="flex items-center gap-1.5 text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 px-3 py-2 rounded-md transition-colors disabled:opacity-50 ml-auto"><Trash2Icon size={12} /> Delete</button>
       </div>
 
       {/* Current Assignment */}
@@ -254,16 +335,53 @@ export default function DeviceDetail({ params }) {
       {/* Assign Modal */}
       {showAssign && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setShowAssign(false)} />
+          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => { setShowAssign(false); setManualEntry(false); setManualForm({ name: "", empId: "" }); }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card border border-border rounded-xl p-6 z-50 shadow-2xl space-y-4">
-            <div className="flex justify-between"><h3 className="text-sm font-semibold">{device.status === "Assigned" ? "Reassign" : "Assign"} Device</h3><button onClick={() => setShowAssign(false)}><XIcon size={16} /></button></div>
+            <div className="flex justify-between"><h3 className="text-sm font-semibold">{device.status === "Assigned" ? "Reassign" : "Assign"} Device</h3><button onClick={() => { setShowAssign(false); setManualEntry(false); setManualForm({ name: "", empId: "" }); }}><XIcon size={16} /></button></div>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Employee *</label>
                 {assignForm.name ? (
                   <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
                     <span className="text-sm">{assignForm.name}{assignForm.empId ? ` (${assignForm.empId})` : ""}</span>
-                    <button type="button" onClick={() => { setAssignForm({ name: "", empId: "" }); setEmpSearch(""); }} className="text-muted-foreground hover:text-foreground"><XIcon size={14} /></button>
+                    <button type="button" onClick={() => { setAssignForm({ name: "", empId: "" }); setEmpSearch(""); setManualEntry(false); setManualForm({ name: "", empId: "" }); }} className="text-muted-foreground hover:text-foreground"><XIcon size={14} /></button>
+                  </div>
+                ) : manualEntry ? (
+                  <div className="space-y-2">
+                    <input
+                      value={manualForm.name}
+                      onChange={(e) => setManualForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Employee name"
+                      autoFocus
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                    <input
+                      value={manualForm.empId}
+                      onChange={(e) => setManualForm((p) => ({ ...p, empId: e.target.value }))}
+                      placeholder="Employee ID"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => { setManualEntry(false); setManualForm({ name: "", empId: "" }); }}
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        ← Back to search
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!manualForm.name.trim() || !manualForm.empId.trim()}
+                        onClick={() => {
+                          setAssignForm({ name: manualForm.name.trim(), empId: manualForm.empId.trim() });
+                          setManualForm({ name: "", empId: "" });
+                          setManualEntry(false);
+                        }}
+                        className="text-[11px] rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 px-3 py-1.5"
+                      >
+                        Use details
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -306,6 +424,13 @@ export default function DeviceDetail({ params }) {
                         <p className="text-xs text-muted-foreground text-center py-3">No employees found</p>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => { setManualEntry(true); setManualForm({ name: empSearch.trim(), empId: "" }); setEmpSearch(""); }}
+                      className="mt-2 text-[11px] text-primary hover:underline"
+                    >
+                      + Enter employee details manually
+                    </button>
                   </div>
                 )}
               </div>

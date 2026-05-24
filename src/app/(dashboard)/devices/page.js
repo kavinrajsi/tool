@@ -222,6 +222,21 @@ export default function DevicesList() {
     await refreshSelected(selected.id);
   }
 
+  async function handleDeleteDevice() {
+    if (!selected) return;
+    if (!confirm(`Permanently delete ${selected.device_id} (${selected.model_name})? This cannot be undone.`)) return;
+    setSaving(true);
+    const { error } = await supabase.from("devices").delete().eq("id", selected.id);
+    if (error) {
+      alert(`Failed to delete: ${error.message}`);
+      setSaving(false);
+      return;
+    }
+    setDevices((prev) => prev.filter((dev) => dev.id !== selected.id));
+    setSelected(null);
+    setSaving(false);
+  }
+
   async function resolveComplaint(cId, resolution) {
     if (!selected) return;
     const complaints = (selected.complaints || []).map((c) =>
@@ -529,6 +544,7 @@ export default function DevicesList() {
                 <a href={`/devices/${d.id}/edit`} className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted/30 transition-colors"><PencilIcon size={12} /> Edit</a>
                 <button onClick={() => setShowComplaint(true)} className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted/30 transition-colors"><AlertTriangleIcon size={12} /> File Complaint</button>
                 <a href={`/devices/${d.id}`} className="flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted/30 transition-colors"><ExternalLinkIcon size={12} /> Detail View</a>
+                <button onClick={handleDeleteDevice} disabled={saving} className="flex items-center gap-1.5 text-xs border border-red-500/30 text-red-400 hover:bg-red-500/10 px-3 py-2 rounded-md transition-colors disabled:opacity-50 ml-auto"><Trash2Icon size={12} /> Delete</button>
               </div>
 
               {/* Current Assignment */}
