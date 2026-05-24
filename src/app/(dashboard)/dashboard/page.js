@@ -10,12 +10,10 @@ import "react-resizable/css/styles.css";
 import {
   ArrowRightIcon,
   PlusIcon,
-  BookOpenIcon,
   CalendarDaysIcon,
   CakeIcon,
   TrophyIcon,
   MegaphoneIcon,
-  RefreshCwIcon,
   CheckIcon,
   LoaderIcon,
   GlobeIcon,
@@ -39,21 +37,6 @@ function useWidth(ref) {
   return width;
 }
 
-const KURALS = [
-  { number: 1,   couplet: ["அகர முதல எழுத்தெல்லாம் ஆதி", "பகவன் முதற்றே உலகு."], meaning: "எழுத்துக்கெல்லாம் அகரம் முதலானது போல், உலகிற்கு இறைவன் முதலானவன்." },
-  { number: 2,   couplet: ["கற்றதனால் ஆய பயனென்கொல் வாலறிவன்", "நற்றாள் தொழாஅர் எனின்."], meaning: "தூய அறிவாளனான இறைவனின் திருவடியை வணங்காவிட்டால் கற்றதனால் என்ன பயன்?" },
-  { number: 4,   couplet: ["வேண்டுதல் வேண்டாமை இலானடி சேர்ந்தார்க்கு", "யாண்டும் இடும்பை இல."], meaning: "விருப்பு வெறுப்பற்ற இறைவனின் திருவடியை சேர்ந்தவர்களுக்கு எங்கும் துன்பமில்லை." },
-  { number: 7,   couplet: ["தனக்குவமை இல்லாதான் தாளசைந்தார்க் கல்லால்", "மனக்கவலை மாற்றல் அரிது."], meaning: "ஒப்பற்ற இறைவனின் திருவடியை வணங்காமல் மனக்கவலையைப் போக்குவது அரிது." },
-  { number: 22,  couplet: ["ஒழுக்கம் விழுப்பந் தரலான் ஒழுக்கம்", "உயிரினும் ஓம்பப் படும்."], meaning: "ஒழுக்கம் சிறப்பை அளிப்பதால், அதை உயிரையும் விட காத்துக்கொள்ள வேண்டும்." },
-  { number: 32,  couplet: ["இன்னாசெய் தாரை ஒறுத்தல் அவர்நாண", "நன்னயஞ் செய்து விடல்."], meaning: "தீமை செய்தவரை தண்டிப்பதைவிட அவர் நாணும்படி நன்மை செய்துவிடுவதே சிறந்தது." },
-  { number: 41,  couplet: ["அன்பும் அறனும் உடைத்தாயின் இல்வாழ்க்கை", "பண்பும் பயனும் அது."], meaning: "அன்பும் அறமும் உள்ள இல்வாழ்க்கை சிறந்த பண்பும் பயனும் உடையது." },
-  { number: 55,  couplet: ["தெய்வத்தான் ஆகா தெனினும் முயற்சிதன்", "மெய்வருத்தக் கூலி தரும்."], meaning: "தெய்வ நம்பிக்கையாலும் ஆகாதென்று தோன்றினாலும், முயற்சி உழைப்பிற்கான பலனை தரும்." },
-  { number: 71,  couplet: ["அன்பிற்கும் உண்டோ அடைக்குந்தாழ் ஆர்வலர்", "புன்கணீர் பூசல் தரும்."], meaning: "அன்புக்கு தடை செய்யும் தாழ்ப்பாள் உண்டோ? அன்பர்களின் கண்ணீரே அதை திறந்துவிடும்." },
-  { number: 100, couplet: ["நன்றி மறப்பது நன்றன்று நன்றல்லது", "அன்றே மறப்பது நன்று."], meaning: "நன்மையை மறப்பது நல்லதல்ல; தீமையை உடனே மறப்பது நல்லது." },
-  { number: 391, couplet: ["கற்க கசடறக் கற்பவை கற்றபின்", "நிற்க அதற்குத் தக."], meaning: "குற்றமற்றவற்றை கற்று, கற்றதற்கு தகுந்தவாறு வாழ வேண்டும்." },
-  { number: 423, couplet: ["எப்பொருள் எத்தன்மைத் தாயினும் அப்பொருள்", "மெய்ப்பொருள் காண்பது அறிவு."], meaning: "எந்தப் பொருளும் எவ்வாறு தோன்றினாலும் அதன் உண்மையான இயல்பை காண்பதே அறிவு." },
-];
-
 // DD-MM-YYYY → Date
 function parseDMY(str) {
   if (!str) return null;
@@ -71,18 +54,10 @@ function upcomingDateLabel(dateStr) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-function getDailyKural() {
-  const start = new Date(new Date().getFullYear(), 0, 0);
-  const dayOfYear = Math.floor((Date.now() - start) / 86400000);
-  return KURALS[dayOfYear % KURALS.length];
-}
-
-
-const LAYOUT_KEY = "dashboard_layout_v3";
-const HIDDEN_KEY = "dashboard_hidden_v3";
+const LAYOUT_KEY = "dashboard_layout_v4";
+const HIDDEN_KEY = "dashboard_hidden_v4";
 
 const ALL_WIDGETS = [
-  { id: "kural",         label: "Thirukkural",      static: true },
   { id: "recent",        label: "Recent Analyses" },
   { id: "domains",       label: "Domain Renewals" },
   { id: "holidays",      label: "Holidays" },
@@ -95,24 +70,22 @@ const ALL_WIDGETS = [
 // Default layout for lg breakpoint (4 columns, each column = 1 unit)
 const DEFAULT_LAYOUTS = {
   lg: [
-    { i: "kural",          x: 0, y: 0, w: 4, h: 3, minW: 1, minH: 2 },
-    { i: "recent",         x: 0, y: 3, w: 2, h: 4, minW: 1, minH: 2 },
-    { i: "domains",        x: 2, y: 3, w: 2, h: 4, minW: 1, minH: 2 },
-    { i: "holidays",       x: 0, y: 7, w: 1, h: 5, minW: 1, minH: 3 },
-    { i: "birthdays",      x: 1, y: 7, w: 1, h: 5, minW: 1, minH: 3 },
-    { i: "anniversaries",  x: 2, y: 7, w: 1, h: 5, minW: 1, minH: 3 },
-    { i: "announcements",  x: 3, y: 7, w: 1, h: 5, minW: 1, minH: 3 },
-    { i: "habits",         x: 0, y: 12, w: 4, h: 4, minW: 2, minH: 2 },
+    { i: "recent",         x: 0, y: 0, w: 2, h: 4, minW: 1, minH: 2 },
+    { i: "domains",        x: 2, y: 0, w: 2, h: 4, minW: 1, minH: 2 },
+    { i: "holidays",       x: 0, y: 4, w: 1, h: 5, minW: 1, minH: 3 },
+    { i: "birthdays",      x: 1, y: 4, w: 1, h: 5, minW: 1, minH: 3 },
+    { i: "anniversaries",  x: 2, y: 4, w: 1, h: 5, minW: 1, minH: 3 },
+    { i: "announcements",  x: 3, y: 4, w: 1, h: 5, minW: 1, minH: 3 },
+    { i: "habits",         x: 0, y: 9, w: 4, h: 4, minW: 2, minH: 2 },
   ],
   sm: [
-    { i: "kural",          x: 0, y: 0, w: 2, h: 4, minW: 1 },
-    { i: "recent",         x: 0, y: 7, w: 2, h: 4, minW: 1 },
-    { i: "domains",        x: 0, y: 11, w: 2, h: 4, minW: 1 },
-    { i: "holidays",       x: 0, y: 15, w: 1, h: 5, minW: 1 },
-    { i: "birthdays",      x: 1, y: 15, w: 1, h: 5, minW: 1 },
-    { i: "anniversaries",  x: 0, y: 20, w: 1, h: 5, minW: 1 },
-    { i: "announcements",  x: 1, y: 20, w: 1, h: 5, minW: 1 },
-    { i: "habits",         x: 0, y: 25, w: 2, h: 4, minW: 1 },
+    { i: "recent",         x: 0, y: 0, w: 2, h: 4, minW: 1 },
+    { i: "domains",        x: 0, y: 4, w: 2, h: 4, minW: 1 },
+    { i: "holidays",       x: 0, y: 8, w: 1, h: 5, minW: 1 },
+    { i: "birthdays",      x: 1, y: 8, w: 1, h: 5, minW: 1 },
+    { i: "anniversaries",  x: 0, y: 13, w: 1, h: 5, minW: 1 },
+    { i: "announcements",  x: 1, y: 13, w: 1, h: 5, minW: 1 },
+    { i: "habits",         x: 0, y: 18, w: 2, h: 4, minW: 1 },
   ],
 };
 
@@ -131,7 +104,6 @@ export default function Dashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [domainRenewals, setDomainRenewals] = useState([]);
   const [search, setSearch] = useState("");
-  const [kural, setKural] = useState(getDailyKural);
   const [habits, setHabits] = useState([]);
   const [habitsStats, setHabitsStats] = useState(null);
   const [habitsLoading, setHabitsLoading] = useState(true);
@@ -147,11 +119,6 @@ export default function Dashboard() {
   const searchRef = useRef(null);
   const gridRef = useRef(null);
   const gridWidth = useWidth(gridRef);
-
-  function shuffleKural() {
-    const next = KURALS[Math.floor(Math.random() * KURALS.length)];
-    setKural(next);
-  }
 
   async function habitAuthHeader() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -537,33 +504,6 @@ export default function Dashboard() {
           compactType="vertical"
           margin={[16, 16]}
         >
-          {/* Kural */}
-          {!hiddenWidgets.includes("kural") && (
-            <div key="kural" className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-orange-500/5 p-5 font-sans flex flex-col overflow-hidden">
-              {editMode && (
-                <div className="absolute top-2 right-2 z-10 no-drag">
-                  <button onClick={() => hideWidget("kural")} className="p-1 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><EyeOffIcon size={12} /></button>
-                </div>
-              )}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <BookOpenIcon size={13} className="text-amber-700 dark:text-amber-500" />
-                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-500 tracking-wide" lang="ta">திருக்குறள்</span>
-                  <button onClick={shuffleKural} className="p-0.5 rounded text-amber-600/60 hover:text-amber-600 dark:text-amber-500/60 dark:hover:text-amber-400 transition-colors no-drag"><RefreshCwIcon size={11} /></button>
-                </div>
-                <span className="text-[11px] text-muted-foreground border border-border/50 rounded-full px-2 py-0.5" lang="ta">குறள் {kural.number}</span>
-              </div>
-              <div className="flex-1 flex flex-col justify-center gap-2 overflow-auto">
-                <div className="space-y-1" lang="ta">
-                  {kural.couplet.map((line, i) => (
-                    <p key={i} className="text-sm font-semibold text-foreground leading-loose">{line}</p>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed" lang="ta">{kural.meaning}</p>
-              </div>
-            </div>
-          )}
-
           {/* Dynamic widgets */}
           {ALL_WIDGETS.filter(w => !w.static && !hiddenWidgets.includes(w.id)).map(w => {
             const content = renderWidget(w.id);

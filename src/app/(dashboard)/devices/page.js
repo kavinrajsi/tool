@@ -77,6 +77,8 @@ export default function DevicesList() {
   const [showComplaint, setShowComplaint] = useState(false);
   const [assignForm, setAssignForm] = useState({ name: "", empId: "" });
   const [empSearch, setEmpSearch] = useState("");
+  const [manualEntry, setManualEntry] = useState(false);
+  const [manualForm, setManualForm] = useState({ name: "", empId: "" });
   const [complaintForm, setComplaintForm] = useState({ reported_by: "", description: "", priority: "Medium" });
   const [saving, setSaving] = useState(false);
 
@@ -169,6 +171,8 @@ export default function DevicesList() {
     }).eq("id", selected.id);
     setShowAssign(false);
     setAssignForm({ name: "", empId: "" });
+    setManualEntry(false);
+    setManualForm({ name: "", empId: "" });
     setSaving(false);
     await refreshSelected(selected.id);
   }
@@ -620,16 +624,53 @@ export default function DevicesList() {
       {/* Assign / Reassign Modal */}
       {showAssign && selected && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => setShowAssign(false)} />
+          <div className="fixed inset-0 bg-black/50 z-[60]" onClick={() => { setShowAssign(false); setManualEntry(false); setManualForm({ name: "", empId: "" }); }} />
           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-card border border-border rounded-xl p-6 z-[70] shadow-2xl space-y-4">
-            <div className="flex justify-between"><h3 className="text-sm font-semibold">{selected.status === "Assigned" ? "Reassign" : "Assign"} Device</h3><button onClick={() => setShowAssign(false)}><XIcon size={16} /></button></div>
+            <div className="flex justify-between"><h3 className="text-sm font-semibold">{selected.status === "Assigned" ? "Reassign" : "Assign"} Device</h3><button onClick={() => { setShowAssign(false); setManualEntry(false); setManualForm({ name: "", empId: "" }); }}><XIcon size={16} /></button></div>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Employee *</label>
                 {assignForm.name ? (
                   <div className="flex items-center justify-between rounded-md border border-border bg-background px-3 py-2">
                     <span className="text-sm">{assignForm.name}{assignForm.empId ? ` (${assignForm.empId})` : ""}</span>
-                    <button type="button" onClick={() => { setAssignForm({ name: "", empId: "" }); setEmpSearch(""); }} className="text-muted-foreground hover:text-foreground"><XIcon size={14} /></button>
+                    <button type="button" onClick={() => { setAssignForm({ name: "", empId: "" }); setEmpSearch(""); setManualEntry(false); setManualForm({ name: "", empId: "" }); }} className="text-muted-foreground hover:text-foreground"><XIcon size={14} /></button>
+                  </div>
+                ) : manualEntry ? (
+                  <div className="space-y-2">
+                    <input
+                      value={manualForm.name}
+                      onChange={(e) => setManualForm((p) => ({ ...p, name: e.target.value }))}
+                      placeholder="Employee name"
+                      autoFocus
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                    <input
+                      value={manualForm.empId}
+                      onChange={(e) => setManualForm((p) => ({ ...p, empId: e.target.value }))}
+                      placeholder="Employee ID"
+                      className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/60"
+                    />
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => { setManualEntry(false); setManualForm({ name: "", empId: "" }); }}
+                        className="text-[11px] text-primary hover:underline"
+                      >
+                        ← Back to search
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!manualForm.name.trim() || !manualForm.empId.trim()}
+                        onClick={() => {
+                          setAssignForm({ name: manualForm.name.trim(), empId: manualForm.empId.trim() });
+                          setManualForm({ name: "", empId: "" });
+                          setManualEntry(false);
+                        }}
+                        className="text-[11px] rounded-md bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50 px-3 py-1.5"
+                      >
+                        Use details
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div>
@@ -672,6 +713,13 @@ export default function DevicesList() {
                         <p className="text-xs text-muted-foreground text-center py-3">No employees found</p>
                       )}
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => { setManualEntry(true); setManualForm({ name: empSearch.trim(), empId: "" }); setEmpSearch(""); }}
+                      className="mt-2 text-[11px] text-primary hover:underline"
+                    >
+                      + Enter employee details manually
+                    </button>
                   </div>
                 )}
               </div>
